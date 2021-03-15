@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -46,9 +47,10 @@ class TapperHomePageState extends State<TapperHomepage>
   Timer timer;
   int trees = 0;
   BigInt score = BigInt.from(0);
+  var onTapVal = 1;
+  var perSecVal = 0;
 
-  // AnimationController _controller;
-  //Animation<double> _treeAnimation;
+  // TODO: This is inefficient. Fix it. Also improve image scaling.
   Image treeImg = Image(
     image: AssetImage("assets/img/tree-min.png"),
     height: 160,
@@ -65,7 +67,16 @@ class TapperHomePageState extends State<TapperHomepage>
     Multiplier("Roots", "assets/img/root.svg", 2, 0, 90, MultiplierType.perSecond),
     Multiplier("Birds", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
     Multiplier("River", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
-    Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond)
+    Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
+    Multiplier("Leaves", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
+    Multiplier("Branch", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
+    Multiplier("Stump", "assets/img/stump.svg", 3, 0, 13, MultiplierType.onTap),
+    Multiplier("Mushroom", "assets/img/mushroom.svg", 4, 0, 20, MultiplierType.onTap),
+    Multiplier("Bark", "assets/img/bark.svg", 1, 0, 50, MultiplierType.perSecond),
+    Multiplier("Roots", "assets/img/root.svg", 2, 0, 90, MultiplierType.perSecond),
+    Multiplier("Birds", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
+    Multiplier("River", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
+    Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
   ];
 
   @override
@@ -97,30 +108,80 @@ class TapperHomePageState extends State<TapperHomepage>
           image: backImg,
           fit: BoxFit.fitHeight,
         )),
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text("CO2 collected",
-                  style: GoogleFonts.vt323(textStyle: TextStyle(fontSize: 20))),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(score.toString() + "kg",
-                  style: GoogleFonts.pressStart2p(
-                      textStyle: TextStyle(fontSize: 30))),
-            ),
+            Spacer(),
             Expanded(
+              flex: 2,
               child: Column(
                 children: [
-                  Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      incrementScoreManual();
-                    },
-                    //child: ScaleTransition(
-                    // scale: _treeAnimation,
-                    child: treeImg,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: AutoSizeText("CO2 collected",
+                        maxLines: 1,
+                        style: GoogleFonts.vt323(
+                            textStyle: TextStyle(fontSize: 20))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: AutoSizeText(score.toString() + "kg",
+                        maxLines: 1,
+                        style: GoogleFonts.pressStart2p(
+                            textStyle: TextStyle(fontSize: 25))),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            incrementScoreManual();
+                          },
+                          //child: ScaleTransition(
+                          // scale: _treeAnimation,
+                          child: treeImg,
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () => playAd(),
+                    child: Icon(Icons.play_arrow),
+                    style: ButtonStyle(
+                        foregroundColor:
+                            MaterialStateProperty.all<Color>(Colors.white),
+                        backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.green),
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25.0),
+                                    side:
+                                        BorderSide(color: Color(0xff003300))))),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => launch("https://tree-tapper.com"),
+                    child: Icon(Icons.info),
+                    style: ButtonStyle(
+                        foregroundColor:
+                            MaterialStateProperty.all<Color>(Colors.white),
+                        backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.green),
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25.0),
+                                    side:
+                                        BorderSide(color: Color(0xff003300))))),
                   ),
                 ],
               ),
@@ -135,38 +196,129 @@ class TapperHomePageState extends State<TapperHomepage>
                 Row(
                   children: [
                     Expanded(
-                        child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Text(
-                              "Real trees planted: ",
-                              style: GoogleFonts.vt323(
-                                  textStyle: TextStyle(
-                                      color: Colors.white, fontSize: 16)),
-                            ))),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(trees.toString(),
-                          style: GoogleFonts.pressStart2p(
-                              textStyle: TextStyle(
-                                  color: Colors.white, fontSize: 25))),
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                "Real trees planted:",
+                                style: GoogleFonts.vt323(
+                                    textStyle: TextStyle(
+                                        color: Colors.white, fontSize: 16)),
+                              )),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: AutoSizeText(trees.toString(),
+                                    style: GoogleFonts.pressStart2p(
+                                        textStyle: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20))),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Padding(
-                        padding: EdgeInsets.all(8),
-                        child: ElevatedButton(
-                            onPressed: () => {playAd()},
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                "CO2 per tap:",
+                                maxLines: 1,
+                                style: GoogleFonts.vt323(
+                                    textStyle: TextStyle(
+                                        color: Colors.white, fontSize: 16)),
+                              )),
+                          Expanded(
                             child: Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Icon(Icons.play_arrow_rounded),
-                            ))),
-                    Padding(
-                        padding: EdgeInsets.all(8),
-                        child: ElevatedButton(
-                            onPressed: () =>
-                                {launch("https://tree-tapper.com")},
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: AutoSizeText(onTapVal.toString(),
+                                    maxLines: 1,
+                                    textAlign: TextAlign.right,
+                                    style: GoogleFonts.pressStart2p(
+                                        textStyle: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20))),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Flexible(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                "Your contribution:",
+                                style: GoogleFonts.vt323(
+                                    textStyle: TextStyle(
+                                        color: Colors.white, fontSize: 16)),
+                              )),
+                          Expanded(
                             child: Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Icon(Icons.info),
-                            ))),
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                // TODO: separate variable for this
+                                child: AutoSizeText(trees.toString(),
+                                    textAlign: TextAlign.right,
+                                    style: GoogleFonts.pressStart2p(
+                                        textStyle: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20))),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                "CO2 / s:",
+                                maxLines: 1,
+                                style: GoogleFonts.vt323(
+                                    textStyle: TextStyle(
+                                        color: Colors.white, fontSize: 16)),
+                              )),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: AutoSizeText(perSecVal.toString(),
+                                    textAlign: TextAlign.right,
+                                    maxLines: 1,
+                                    style: GoogleFonts.pressStart2p(
+                                        textStyle: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20))),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 Expanded(
@@ -207,9 +359,10 @@ class TapperHomePageState extends State<TapperHomepage>
                                         Padding(
                                           padding: const EdgeInsets.all(2.0),
                                           child: Align(
-                                              alignment: Alignment.bottomCenter,
+                                              alignment: Alignment.topCenter,
                                               child: Text(
                                                 "x ",
+                                                textAlign: TextAlign.center,
                                                 style: GoogleFonts.vt323(
                                                     textStyle: TextStyle(
                                                         color: Colors.white)),
@@ -217,14 +370,15 @@ class TapperHomePageState extends State<TapperHomepage>
                                         ),
                                         Expanded(
                                           child: Padding(
-                                            padding: const EdgeInsets.all(2.0),
+                                            padding: const EdgeInsets.all(8.0),
                                             child: Align(
                                                 alignment:
                                                     Alignment.bottomRight,
-                                                child: Text(
+                                                child: AutoSizeText(
                                                   multipliers[index]
                                                       .count
                                                       .toString(),
+                                                  maxLines: 1,
                                                   style:
                                                       GoogleFonts.pressStart2p(
                                                           textStyle: TextStyle(
@@ -332,6 +486,17 @@ class TapperHomePageState extends State<TapperHomepage>
       setState(() {
         score = score - BigInt.from(multipliers[id].cost);
         multipliers[id].count++;
+        onTapVal = 1;
+        multipliers.forEach((multiplier) {
+          if (multiplier.type == MultiplierType.onTap)
+            onTapVal += multiplier.count * multiplier.multiplicationFactor;
+        });
+
+        perSecVal = 0;
+        multipliers.forEach((multiplier) {
+          if (multiplier.type == MultiplierType.perSecond)
+            perSecVal += multiplier.count * multiplier.multiplicationFactor;
+        });
       });
     } else {
       Fluttertoast.showToast(
@@ -367,6 +532,7 @@ class TapperHomePageState extends State<TapperHomepage>
     return BigInt.from(prefs.getString("score") ?? 0);
   }
 
+  // TODO make persistence work
   // Get data from SharedPreferences (for persistence)
   getData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();

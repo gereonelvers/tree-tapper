@@ -6,6 +6,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 class AdManager {
   InterstitialAd myInterstitial;
 
+  // TODO: This does not work reliably right now. Why?
   bool playAd() {
     print('init ad');
     final AdListener listener = AdListener(
@@ -17,7 +18,7 @@ class AdManager {
     );
     myInterstitial = InterstitialAd(
       // TODO: Set own key.
-      adUnitId: 'ca-app-pub-XXXX',
+      adUnitId: 'ca-app-pub-ca-app-pub-XXX',
       request: AdRequest(),
       listener: listener,
     );
