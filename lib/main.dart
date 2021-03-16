@@ -11,8 +11,6 @@ import 'package:tree_clicker/Multiplier.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
 
-import 'AdManager.dart';
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
@@ -42,8 +40,22 @@ class TapperHomepage extends StatefulWidget {
 }
 
 class TapperHomePageState extends State<TapperHomepage>
-    with TickerProviderStateMixin {
-  AdManager adManager = AdManager();
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+
+  final RewardedAd rewardedAd = RewardedAd(
+    // TODO: Set own ID
+    adUnitId: 'ca-app-pub-XXX',
+    request: AdRequest(),
+    listener: AdListener(
+      onRewardedAdUserEarnedReward: (RewardedAd ad, RewardItem reward) {
+        // TODO: fix reward
+      },
+      onAdClosed: (Ad ad) => ad.dispose(),
+      onApplicationExit: (Ad ad) => ad.dispose(),
+    ),
+  );
+
+
   Timer timer;
   int trees = 0;
   BigInt score = BigInt.from(0);
@@ -57,7 +69,7 @@ class TapperHomePageState extends State<TapperHomepage>
   );
   AssetImage backImg = AssetImage("assets/img/background.png");
 
-  // Syntax for new Multipliers: name, image (svg), multiplicationFactor, count, cost, type
+  // Syntax for new Multipliers: name (must be unique!), image (svg), multiplicationFactor, count, cost, type
   List<Multiplier> multipliers = [
     Multiplier("Leaves", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
     Multiplier("Branch", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
@@ -68,23 +80,23 @@ class TapperHomePageState extends State<TapperHomepage>
     Multiplier("Birds", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
     Multiplier("River", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
     Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
-    Multiplier("Leaves", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
-    Multiplier("Branch", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
-    Multiplier("Stump", "assets/img/stump.svg", 3, 0, 13, MultiplierType.onTap),
-    Multiplier("Mushroom", "assets/img/mushroom.svg", 4, 0, 20, MultiplierType.onTap),
-    Multiplier("Bark", "assets/img/bark.svg", 1, 0, 50, MultiplierType.perSecond),
-    Multiplier("Roots", "assets/img/root.svg", 2, 0, 90, MultiplierType.perSecond),
-    Multiplier("Birds", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
-    Multiplier("River", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
-    Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
+    Multiplier("Leaves1", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
+    Multiplier("Branch1", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
+    Multiplier("Stump1", "assets/img/stump.svg", 3, 0, 13, MultiplierType.onTap),
+    Multiplier("Mushroom1", "assets/img/mushroom.svg", 4, 0, 20, MultiplierType.onTap),
+    Multiplier("Bark1", "assets/img/bark.svg", 1, 0, 50, MultiplierType.perSecond),
+    Multiplier("Roots1", "assets/img/root.svg", 2, 0, 90, MultiplierType.perSecond),
+    Multiplier("Birds1", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
+    Multiplier("River1", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
+    Multiplier("Squirrels1", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
   ];
 
   @override
   void initState() {
-    super.initState();
+    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => incrementScoreLoop());
     getData();
-    timer =
-        Timer.periodic(Duration(seconds: 1), (Timer t) => incrementScoreLoop());
+    WidgetsBinding.instance.addObserver(this);
+    super.initState();
   }
 
   @override
@@ -97,6 +109,7 @@ class TapperHomePageState extends State<TapperHomepage>
   @override
   Widget build(BuildContext context) {
     FlutterStatusbarcolor.setStatusBarColor(Colors.black);
+    rewardedAd.load();
     return Scaffold(
         body: SafeArea(
             child: Column(children: [
@@ -433,22 +446,18 @@ class TapperHomePageState extends State<TapperHomepage>
     ])));
   }
 
-  playAd() {
-    if (adManager.playAd()) {
-      var reward = score / BigInt.from(10);
-      addScore(BigInt.from(score / BigInt.from(10)));
-      incrementTrees();
-      Fluttertoast.showToast(
-          msg: "Earned " +
-              reward.toInt().toString() +
-              " points by watching an ad.\n Good job saving the planet!",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.grey,
-          textColor: Colors.white,
-          fontSize: 16.0);
+  playAd() async {
+    if(await rewardedAd.isLoaded()) {
+      rewardedAd.show();
+      rewardUser();
+    } else {
+      rewardedAd.load();
     }
+  }
+
+  rewardUser() {
+    addScore(BigInt.from(score/BigInt.from(10)));
+    showToast("Congrats! You helped plant a tree. Enjoy the reward.");
   }
 
   incrementScoreLoop() {
@@ -482,32 +491,31 @@ class TapperHomePageState extends State<TapperHomepage>
   }
 
   tapMultiplier(int id) {
-    if (score > BigInt.from(multipliers[id].cost)) {
+    if (score >= BigInt.from(multipliers[id].cost)) {
       setState(() {
         score = score - BigInt.from(multipliers[id].cost);
         multipliers[id].count++;
-        onTapVal = 1;
-        multipliers.forEach((multiplier) {
-          if (multiplier.type == MultiplierType.onTap)
-            onTapVal += multiplier.count * multiplier.multiplicationFactor;
-        });
-
-        perSecVal = 0;
-        multipliers.forEach((multiplier) {
-          if (multiplier.type == MultiplierType.perSecond)
-            perSecVal += multiplier.count * multiplier.multiplicationFactor;
-        });
+        calcScoreValues();
       });
     } else {
-      Fluttertoast.showToast(
-          msg: "Not enough CO2 budget",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.grey,
-          textColor: Colors.white,
-          fontSize: 16.0);
+      showToast("Not enough CO2 budget");
     }
+  }
+
+  calcScoreValues() {
+    setState(() {
+      onTapVal = 1;
+      multipliers.forEach((multiplier) {
+        if (multiplier.type == MultiplierType.onTap)
+          onTapVal += multiplier.count * multiplier.multiplicationFactor;
+      });
+
+      perSecVal = 0;
+      multipliers.forEach((multiplier) {
+        if (multiplier.type == MultiplierType.perSecond)
+          perSecVal += multiplier.count * multiplier.multiplicationFactor;
+      });
+    });
   }
 
   addScore(BigInt bigI) {
@@ -527,24 +535,51 @@ class TapperHomePageState extends State<TapperHomepage>
     }
   }
 
-  Future<BigInt> saveScore() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return BigInt.from(prefs.getString("score") ?? 0);
+  void showToast(String t){
+    Fluttertoast.showToast(
+        msg: t,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.grey,
+        textColor: Colors.white,
+        fontSize: 16.0);
   }
 
-  // TODO make persistence work
-  // Get data from SharedPreferences (for persistence)
+  // Get data from SharedPreferences
   getData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    score = BigInt.parse(prefs.getString("score") ?? "0");
-    var i = prefs.getInt("treesPlanted");
-    trees = i == null ? 0 : i;
+    var spScore = prefs.getString("score")??"0";
+    score = BigInt.parse(spScore);
+    trees = prefs.getInt("treesPlanted")??0;
+    multipliers.forEach((multiplier) {
+      multiplier.count = prefs.getInt(multiplier.name)??0;
+    });
+    calcScoreValues();
   }
 
+  // Save data to SharedPreferences
   saveData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt("treesPlanted", trees);
     prefs.setString("score", score.toString());
-    print('Saving?');
+    multipliers.forEach((multiplier) {
+      prefs.setInt(multiplier.name, multiplier.count);
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+        break;
+      case AppLifecycleState.paused:
+        saveData();
+        break;
+      case AppLifecycleState.resumed:
+        break;
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 }
