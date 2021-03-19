@@ -1,31 +1,60 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tree_clicker/BackendResponse.dart';
 import 'package:tree_clicker/Multiplier.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
+import 'package:http/http.dart' as http;
+import 'package:share/share.dart';
+
+import 'Splash.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-  runApp(MyApp());
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((value) => runApp(TreeTapper()));
 }
 
-class MyApp extends StatelessWidget {
+class TreeTapper extends StatefulWidget {
+  @override
+  _TreeTapperState createState() => _TreeTapperState();
+}
+
+class _TreeTapperState extends State<TreeTapper> {
+  var test1;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tree Tapper',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
-      home: TapperHomepage(title: 'Tree Tapper'),
+    return FutureBuilder(
+      // Waiting one second before showing app should prevent most instances of jumping as data/assets/fonts are loaded in.
+      // Alas, it doesn't. TODO: make it work, additionally: make it elegant
+      // future: Future.delayed(Duration(seconds: 1)),
+      builder: (context, AsyncSnapshot snapshot) {
+        // Show splash screen while waiting for app resources to load:
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(home: Splash());
+        } else {
+          // Loading is done, return the app:
+          return MaterialApp(
+            title: 'Tree Tapper',
+            theme: ThemeData(
+              primarySwatch: Colors.green,
+            ),
+            home: TapperHomepage(title: 'Tree Tapper'),
+          );
+        }
+      },
     );
   }
 }
@@ -49,17 +78,16 @@ class TapperHomePageState extends State<TapperHomepage>
 
   Timer timer;
   int trees = 0;
-  int treesGlobal = 50;
-  int treesGoal = 100;
+  int treeTotal = 0;
+  int treesGoal = 0;
+  double adFactor = 0.0;
   BigInt score = BigInt.from(0);
   var onTapVal = 1;
   var perSecVal = 0;
 
   // TODO: This is inefficient. Fix it. Also improve image scaling.
-  Image treeImg = Image(
-    image: AssetImage("assets/img/tree-full.png"),
-    height: 250,
-  );
+  AssetImage treeImg = AssetImage("assets/img/tree-0.png");
+  int treeAsset = 0;
   AssetImage backImg = AssetImage("assets/img/background.png");
 
   // Syntax for new Multipliers: name (must be unique!), image (svg), multiplicationFactor, count, cost, type
@@ -88,7 +116,7 @@ class TapperHomePageState extends State<TapperHomepage>
   void initState() {
     rewardedAd = RewardedAd(
       // TODO: Set own ID
-      adUnitId: 'ca-app-pub-XXX',
+      adUnitId: 'ca-app-pub-xxx',
       request: AdRequest(),
       listener: AdListener(
         onRewardedAdUserEarnedReward: (RewardedAd ad, RewardItem reward) {
@@ -131,24 +159,74 @@ class TapperHomePageState extends State<TapperHomepage>
               child: Column(children: [
                 Row(
                   children: [
-                    Expanded(
-                      flex: 4,
+                    Flexible(
+                      flex: 1,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Padding(
                               padding: EdgeInsets.all(8),
-                              child: AutoSizeText(
-                                "You planted " +
-                                    trees.toString() +
-                                    " out of " +
-                                    treesGlobal.toString() +
-                                    " trees",
+                              child: Text(
+                                "Total trees:",
+                                style: GoogleFonts.vt323(
+                                    textStyle: TextStyle(
+                                        color: Colors.white, fontSize: 16)),
+                              )),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: AutoSizeText(treeTotal.toString(),
+                                    textAlign: TextAlign.right,
+                                    style: GoogleFonts.pressStart2p(
+                                        textStyle: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16))),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                "Your trees:",
                                 maxLines: 1,
                                 style: GoogleFonts.vt323(
                                     textStyle: TextStyle(
-                                        color: Colors.white, fontSize: 20)),
+                                        color: Colors.white, fontSize: 16)),
                               )),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: AutoSizeText((trees*adFactor).toString(),
+                                    textAlign: TextAlign.right,
+                                    maxLines: 1,
+                                    style: GoogleFonts.pressStart2p(
+                                        textStyle: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16))),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: GestureDetector(child: Icon(Icons.info, color: Colors.white,), onTap: () =>
+                                launch("https://tree-tapper.com/faq")),
+                          ),
+                          /*// TODO: Is there a need for this?
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: GestureDetector(child: Icon(Icons.settings, color: Colors.white,), onTap: () =>
+                                launch("https://tree-tapper.com")),
+                          ),*/
                         ],
                       ),
                     ),
@@ -159,7 +237,7 @@ class TapperHomePageState extends State<TapperHomepage>
                     valueColor:
                         new AlwaysStoppedAnimation<Color>(Color((0xffffc107))),
                     backgroundColor: Color(0xff1b0000),
-                    value: trees.toDouble() + 1 / treesGoal.toDouble() + 1,
+                    value: (trees.toDouble()*adFactor + 1) / (treesGoal.toDouble() + 1),
                     semanticsLabel: "trees progress indicator"),
                 Expanded(
                     child: Container(
@@ -202,7 +280,8 @@ class TapperHomePageState extends State<TapperHomepage>
                                     },
                                     //child: ScaleTransition(
                                     // scale: _treeAnimation,
-                                    child: treeImg,
+                                    // TODO: Fix scaling
+                                    child: Image(image: treeImg, height: 250),
                                   ),
                                 ],
                               ),
@@ -234,20 +313,22 @@ class TapperHomePageState extends State<TapperHomepage>
                             ),
                             ElevatedButton(
                               onPressed: () =>
-                                  launch("https://tree-tapper.com"),
-                              child: Icon(Icons.info),
+                                Share.share('Check out Tree Tapper!\n'+
+                                    'I planted '+(trees*adFactor).toString() + " real trees playing this game!\n"+
+                                    "Download it at https://tree-tapper.com", subject: 'Check out Tree Tapper!'),
+                              child: Icon(Icons.share),
                               style: ButtonStyle(
                                   foregroundColor:
-                                      MaterialStateProperty.all<Color>(
-                                          Colors.white),
+                                  MaterialStateProperty.all<Color>(
+                                      Colors.white),
                                   backgroundColor:
-                                      MaterialStateProperty.all<Color>(
-                                          Colors.green),
+                                  MaterialStateProperty.all<Color>(
+                                      Colors.green),
                                   shape: MaterialStateProperty.all<
-                                          RoundedRectangleBorder>(
+                                      RoundedRectangleBorder>(
                                       RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(25.0),
+                                          BorderRadius.circular(25.0),
                                           side: BorderSide(
                                               color: Color(0xff003300))))),
                             ),
@@ -276,8 +357,8 @@ class TapperHomePageState extends State<TapperHomepage>
                     ],
                   ),
                 )),
-
                 LinearProgressIndicator(
+                    // TODO: This should track progress towards next tree change
                     value: score.toDouble() / 300.toDouble(),
                     semanticsLabel: "prestige progress indicator"),
                 Row(
@@ -298,7 +379,7 @@ class TapperHomePageState extends State<TapperHomepage>
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Align(
-                                alignment: Alignment.center,
+                                alignment: Alignment.centerLeft,
                                 child: AutoSizeText(onTapVal.toString(),
                                     textAlign: TextAlign.right,
                                     style: GoogleFonts.pressStart2p(
@@ -328,7 +409,7 @@ class TapperHomePageState extends State<TapperHomepage>
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Align(
-                                alignment: Alignment.center,
+                                alignment: Alignment.centerLeft,
                                 child: AutoSizeText(perSecVal.toString(),
                                     textAlign: TextAlign.right,
                                     maxLines: 1,
@@ -540,11 +621,14 @@ class TapperHomePageState extends State<TapperHomepage>
 
   // Check if tree asset changed or prestige button should be visible
   void checkAssetUpdates() {
-    List<String> treeAssetStrings = [
-      "assets/img/tree-full.png",
-      "assets/img/tree-min.png"
-    ];
-    // TODO: Implement tree asset swapping on threshold hit
+    List treeThresholds = [100,200,300,400,500,600,700,800,900,1000];
+    setState(() {
+      if (score > BigInt.from(treeThresholds[treeAsset%treeThresholds.length])) {
+        treeAsset++;
+        // TODO: Add swapping animation
+        treeImg = AssetImage("assets/img/tree-"+(treeAsset%47).toString()+".png");
+      }
+    });
 
     // Enable prestige button if score threshold is reached
     setState(() {
@@ -593,8 +677,38 @@ class TapperHomePageState extends State<TapperHomepage>
     multipliers.forEach((multiplier) {
       multiplier.count = prefs.getInt(multiplier.name) ?? 0;
     });
-    prestigeScore = prefs.getInt("prestigeScore") ?? 0;
+    treeAsset = prefs.getInt("treeAssets")??0;
+
+    setState(() {
+      prestigeScore = prefs.getInt("prestigeScore") ?? 0;
+      if(treeTotal==0) treeTotal = prefs.getInt("treeTotal") ?? 0;
+      if(treesGoal==0) treesGoal = prefs.getInt("treeGoal") ?? 0;
+      if(adFactor==0) adFactor = prefs.getDouble("adFactor") ?? 0.0;
+    });
+
     calcScoreValues();
+    BackendResponse backendResponse = await fetchBackendResponse();
+    setState(() {
+      if(backendResponse.treeTotal!=null) treeTotal = backendResponse.treeTotal;
+      if(backendResponse.treeGoal!=null) treesGoal = backendResponse.treeGoal;
+      if(backendResponse.adFactor!=null) adFactor = backendResponse.adFactor;
+    });
+  }
+
+  Future<BackendResponse> fetchBackendResponse() async {
+    // TODO: replace with correct URL once backend is set up
+    final response = await http.get(Uri.https('run.mocky.io', "/v3/acc51187-a4bf-442d-a2cd-027e07dd2745"));
+    if (response.statusCode == 200) {
+      BackendResponse backendResponse;
+      try {
+        backendResponse = BackendResponse.fromJson(jsonDecode(response.body));
+      } on FormatException catch (e) {
+        backendResponse = BackendResponse(treeTotal: null, treeGoal: null, adFactor: null);
+      }
+      return backendResponse;
+    } else {
+      return BackendResponse(treeTotal: null, treeGoal: null, adFactor: null);
+    }
   }
 
   // Save data to SharedPreferences
@@ -606,6 +720,12 @@ class TapperHomePageState extends State<TapperHomepage>
       prefs.setInt(multiplier.name, multiplier.count);
     });
     prefs.setInt("prestigeScore", prestigeScore);
+
+    prefs.setInt("treeTotal", treeTotal);
+    prefs.setInt("treeGoal", treesGoal);
+    prefs.setDouble("adFactor", adFactor);
+    prefs.setInt("treeAsset", treeAsset);
+
   }
 
   // Watch application lifecycle so data can be saved on pause

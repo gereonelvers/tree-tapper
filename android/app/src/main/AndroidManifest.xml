@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gereonelvers.tree_tapper">
+    <uses-permission android:name="android.permission.INTERNET" />
    <application
         android:label="Tree Tapper"
         android:icon="@mipmap/ic_launcher">
