@@ -23,7 +23,11 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   LicenseRegistry.addLicense(() async* {
-    final license = await rootBundle.loadString('assets/fonts/OFL.txt');
+    final license = await rootBundle.loadString('assets/fonts/OFL-VT323.txt');
+    yield LicenseEntryWithLineBreaks(['google_fonts'], license);
+  });
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('assets/fonts/OFL-PS2P.txt');
     yield LicenseEntryWithLineBreaks(['google_fonts'], license);
   });
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
@@ -66,64 +70,65 @@ class TapperHomepage extends StatefulWidget {
   TapperHomePageState createState() => TapperHomePageState();
 }
 
-class TapperHomePageState extends State<TapperHomepage>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+class TapperHomePageState extends State<TapperHomepage> with TickerProviderStateMixin, WidgetsBindingObserver {
   RewardedAd rewardedAd;
 
   // This timer triggers once a second and is responsible for adding "per second" values
   Timer timer;
 
+  // These variables keep track of the real trees (user, global, goal)
   int trees = 0;
   int treeTotal = 0;
   int treesGoal = 0;
 
-  double adFactor = 0.0;
+  // This value is how many trees a single ad-watch earns on average
+  double adFactor = 1.0;
 
+  // These variables keep track of the user's score
   BigInt score = BigInt.from(0);
+  BigInt scoreGoal = BigInt.from(1);
+  int initialScoreGoal = 200;
 
+  // These are the base values earned per tap/second
   var onTapVal = 1;
   var perSecVal = 0;
 
-  // TODO: Balance these values so progression makes sense
-  List treeThresholds = [100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,3000,3100,3200,3300,3400,3500,3600,3700,3800,3900,4000,4100,4200,4300,4400,4500,4600];
-
+  // These values deal with the image assets
   Image treeImage;
   int treeAsset = 0;
   int totalTreeAssets = 46;
-
   Image backgroundImage;
   int backgroundAsset = 0;
   int totalBackgroundAssets = 5;
   bool prestigeVisible = false;
 
+  // These variables relate to the reward earned by watching an ad
   int rewardTimer = 0;
   int rewardFactor = 1;
   bool rewardVisible = false;
 
   // Syntax for new Multipliers: name (must be unique!), image (svg), multiplicationFactor, count, cost, type
+  // TODO: Balance pricing
   List<Multiplier> multipliers = [
+    // On Tap Multipliers
     Multiplier("Leaves", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
     Multiplier("Branch", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
     Multiplier("Stump", "assets/img/stump.svg", 3, 0, 13, MultiplierType.onTap),
     Multiplier("Mushroom", "assets/img/mushroom.svg", 4, 0, 20, MultiplierType.onTap),
-    Multiplier("Bark", "assets/img/bark.svg", 1, 0, 50, MultiplierType.perSecond),
-    Multiplier("Roots", "assets/img/root.svg", 2, 0, 90, MultiplierType.perSecond),
+    Multiplier("Bark", "assets/img/bark.svg", 1, 0, 50, MultiplierType.onTap),
+    Multiplier("Roots", "assets/img/root.svg", 2, 0, 90, MultiplierType.onTap),
+    // Per Second Multipliers
     Multiplier("Birds", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
     Multiplier("River", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
     Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
-    Multiplier("Leaves1", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
-    Multiplier("Branch1", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
-    Multiplier("Stump1", "assets/img/stump.svg", 3, 0, 13, MultiplierType.onTap),
-    Multiplier("Mushroom1", "assets/img/mushroom.svg", 4, 0, 20, MultiplierType.onTap),
-    Multiplier("Bark1", "assets/img/bark.svg", 1, 0, 50, MultiplierType.perSecond),
-    Multiplier("Roots1", "assets/img/root.svg", 2, 0, 90, MultiplierType.perSecond),
-    Multiplier("Birds1", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
-    Multiplier("River1", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
-    Multiplier("Squirrels1", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
+    Multiplier("Sun", "assets/img/sun.svg", 1, 0, 5, MultiplierType.perSecond),
+    Multiplier("Watering Pot", "assets/img/wateringpot.svg", 2, 0, 9, MultiplierType.perSecond),
+    Multiplier("Shovel", "assets/img/shovel.svg", 3, 0, 13, MultiplierType.perSecond),
   ];
 
   @override
   void initState() {
+    // Initialize the rewarded video ad
     rewardedAd = RewardedAd(
       adUnitId: 'ca-app-pub-xxx',
       request: AdRequest(),
@@ -135,11 +140,14 @@ class TapperHomePageState extends State<TapperHomepage>
         onApplicationExit: (Ad ad) => ad.dispose(),
       ),
     );
+    // Start timer for score loop
     timer = Timer.periodic(Duration(seconds: 1), (Timer t) => incrementScoreLoop());
+    // Get data from shared preferences
     getData();
     WidgetsBinding.instance.addObserver(this);
+    // Set initial image assets
     treeImage = Image.asset("assets/img/tree-" + treeAsset.toString() + ".png", key: ValueKey<int>(treeAsset));
-    backgroundImage = Image.asset("assets/img/background-" + backgroundAsset.toString() + ".png", fit: BoxFit.cover,);
+    backgroundImage = Image.asset("assets/img/background-" + backgroundAsset.toString() + ".png", fit: BoxFit.cover);
     super.initState();
   }
 
@@ -255,7 +263,9 @@ class TapperHomePageState extends State<TapperHomepage>
               children: [
                 AnimatedSwitcher(
                     duration: const Duration(milliseconds: 500),
-                    child: Column(children: [Expanded(child: backgroundImage)], key: ValueKey<int>(backgroundAsset))),
+                    child: Column(
+                        children: [Expanded(child: backgroundImage)],
+                        key: ValueKey<int>(backgroundAsset))),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -323,7 +333,7 @@ class TapperHomePageState extends State<TapperHomepage>
                               'Check out Tree Tapper!\n' +
                                   'I planted ' +
                                   (trees * adFactor).toString() +
-                                  " real trees playing this game!\n" +
+                                  " real trees playing the game!\n" +
                                   "Download it at https://tree-tapper.com",
                               subject: 'Check out Tree Tapper!'),
                           child: Icon(Icons.share),
@@ -339,18 +349,6 @@ class TapperHomePageState extends State<TapperHomepage>
                                       side: BorderSide(
                                           color: Color(0xff003300))))),
                         ),
-                        Visibility(
-                            visible: rewardVisible,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: CircularProgressIndicator(
-                                valueColor: new AlwaysStoppedAnimation<Color>(
-                                    Color((0xffffc107))),
-                                value: rewardTimer / 60,
-                                semanticsLabel:
-                                    "circular reward timing indicator",
-                              ),
-                            )),
                         Visibility(
                             visible: prestigeVisible,
                             child: ElevatedButton(
@@ -369,7 +367,19 @@ class TapperHomePageState extends State<TapperHomepage>
                                             borderRadius:
                                                 BorderRadius.circular(25.0),
                                             side: BorderSide(
-                                                color: Color(0xff003300)))))))
+                                                color: Color(0xff003300))))))),
+                        Visibility(
+                            visible: rewardVisible,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(
+                                valueColor: new AlwaysStoppedAnimation<Color>(
+                                    Color((0xffffc107))),
+                                value: rewardTimer / 60,
+                                semanticsLabel:
+                                    "circular reward timing indicator",
+                              ),
+                            )),
                       ],
                     ),
                   ),
@@ -380,10 +390,7 @@ class TapperHomePageState extends State<TapperHomepage>
         Expanded(
           flex: 1,
           child: LinearProgressIndicator(
-              // This is really ugly. Basically:
-              // (current score - last threshold) / (next threshold - last threshold) with a lot of edge cases and type conversions
-              value: (((score % BigInt.from(treeThresholds.last) - BigInt.from(treeAsset == 0 ? 0 : treeThresholds[treeAsset - 1])).toDouble()) /
-                      ((treeThresholds[treeAsset % treeThresholds.last] - (treeAsset == 0 ? 0 : treeThresholds[treeAsset - 1])).toDouble())) % 1,
+              value: ((score.toDouble() + 1) / (scoreGoal.toDouble() + 1)),
               semanticsLabel: "game progress indicator"),
         ),
         Expanded(
@@ -603,7 +610,6 @@ class TapperHomePageState extends State<TapperHomepage>
       calcScoreValues();
     }
     scoreIncrement = scoreIncrement * rewardFactor;
-
     setState(() {
       addScore(BigInt.from(scoreIncrement));
     });
@@ -635,6 +641,7 @@ class TapperHomePageState extends State<TapperHomepage>
       setState(() {
         score = score - BigInt.from(multipliers[id].cost);
         multipliers[id].count++;
+        multipliers[id].cost = multipliers[id].cost * 2;
         calcScoreValues();
       });
     } else {
@@ -668,23 +675,23 @@ class TapperHomePageState extends State<TapperHomepage>
 
   // Check if tree asset changed or prestige button should be visible
   void checkAssetUpdates() {
-    if (treeAsset >= totalTreeAssets) treeAsset = 0;
-    // This needs to be a while-loop in case there is every more than one asset swap per method call
-    while ((score % BigInt.from(treeThresholds.last + 1)) >=
-        BigInt.from(treeThresholds[treeAsset])) {
+    // This needs to be a while-loop in case there is every more than one asset swap per method call (this shouldn't happen, but idk)
+    while (score >= scoreGoal) {
       treeAsset++;
       setState(() {
+        //if (treeAsset > totalTreeAssets) {
+        if (treeAsset > totalTreeAssets) {
+          print('Triggering prestige visibility because asset ' +
+              treeAsset.toString() +
+              " has been hit. Should remain visible.");
+          treeAsset = 0;
+          prestigeVisible = true;
+        }
+        // TODO: This is the multiplication factor for scoreGoal. Balance it
+        scoreGoal = scoreGoal * BigInt.from(3);
         treeImage = Image.asset(
-          "assets/img/tree-" + treeAsset.toString() + ".png",
-          key: ValueKey<int>(treeAsset),
-        );
-      });
-    }
-
-    // Enable prestige button if score threshold is reached
-    if (score >= BigInt.from(treeThresholds[2])) {
-      setState(() {
-        prestigeVisible = true;
+            "assets/img/tree-" + treeAsset.toString() + ".png",
+            key: ValueKey<int>(treeAsset));
       });
     }
   }
@@ -693,6 +700,7 @@ class TapperHomePageState extends State<TapperHomepage>
   void upgradeBackground() {
     // Reset everything to 0
     score = BigInt.from(0);
+    scoreGoal = BigInt.from(initialScoreGoal);
     multipliers.forEach((multiplier) {
       multiplier.count = 0;
     });
@@ -705,7 +713,10 @@ class TapperHomePageState extends State<TapperHomepage>
 
     // Change background asset
     setState(() {
-      backgroundImage = Image.asset("assets/img/background-" + backgroundAsset.toString() + ".png", fit: BoxFit.cover,);
+      backgroundImage = Image.asset(
+        "assets/img/background-" + backgroundAsset.toString() + ".png",
+        fit: BoxFit.cover,
+      );
       prestigeVisible = false;
     });
   }
@@ -726,6 +737,12 @@ class TapperHomePageState extends State<TapperHomepage>
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var spScore = prefs.getString("score") ?? "0";
     score = BigInt.parse(spScore);
+
+    // TODO: This is the start value for scoreGoal. Balance it.
+    var spScoreGoal =
+        prefs.getString("scoreGoal") ?? initialScoreGoal.toString();
+    scoreGoal = BigInt.parse(spScoreGoal);
+
     trees = prefs.getInt("treesPlanted") ?? 0;
     multipliers.forEach((multiplier) {
       multiplier.count = prefs.getInt(multiplier.name) ?? 0;
@@ -744,9 +761,9 @@ class TapperHomePageState extends State<TapperHomepage>
     BackendResponse backendResponse = await fetchBackendResponse();
     setState(() {
       if (backendResponse.treeTotal != null)
-        treeTotal = backendResponse.treeTotal;
+        treeTotal = backendResponse.treeTotal.round();
       if (backendResponse.treeGoal != null)
-        treesGoal = backendResponse.treeGoal;
+        treesGoal = backendResponse.treeGoal.round();
       if (backendResponse.adFactor != null) adFactor = backendResponse.adFactor;
     });
   }
@@ -756,6 +773,7 @@ class TapperHomePageState extends State<TapperHomepage>
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt("treesPlanted", trees);
     prefs.setString("score", score.toString());
+    prefs.setString("scoreGoal", scoreGoal.toString());
     multipliers.forEach((multiplier) {
       prefs.setInt(multiplier.name, multiplier.count);
     });
@@ -770,9 +788,7 @@ class TapperHomePageState extends State<TapperHomepage>
 
   // Fetch remote data from server
   Future<BackendResponse> fetchBackendResponse() async {
-    // TODO: replace with correct URL once backend is set up
-    final response = await http.get(
-        Uri.https('run.mocky.io', "/v3/acc51187-a4bf-442d-a2cd-027e07dd2745"));
+    final response = await http.get(Uri.https('api.tree-tapper.com', "/"));
     if (response.statusCode == 200) {
       BackendResponse backendResponse;
       try {
