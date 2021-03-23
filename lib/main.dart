@@ -87,6 +87,7 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
   // These variables keep track of the user's score
   BigInt score = BigInt.from(0);
   BigInt scoreGoal = BigInt.from(1);
+  // TODO: This is the start value for scoreGoal. Balance it.
   int initialScoreGoal = 200;
 
   // These are the base values earned per tap/second
@@ -99,7 +100,7 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
   int totalTreeAssets = 46;
   Image backgroundImage;
   int backgroundAsset = 0;
-  int totalBackgroundAssets = 5;
+  int totalBackgroundAssets = 7;
   bool prestigeVisible = false;
 
   // These variables relate to the reward earned by watching an ad
@@ -112,18 +113,18 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
   List<Multiplier> multipliers = [
     // On Tap Multipliers
     Multiplier("Leaves", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
-    Multiplier("Branch", "assets/img/branch.svg", 2, 0, 9, MultiplierType.onTap),
-    Multiplier("Stump", "assets/img/stump.svg", 3, 0, 13, MultiplierType.onTap),
-    Multiplier("Mushroom", "assets/img/mushroom.svg", 4, 0, 20, MultiplierType.onTap),
-    Multiplier("Bark", "assets/img/bark.svg", 1, 0, 50, MultiplierType.onTap),
-    Multiplier("Roots", "assets/img/root.svg", 2, 0, 90, MultiplierType.onTap),
+    Multiplier("Branch", "assets/img/branch.svg", 5, 0, 100, MultiplierType.onTap),
+    Multiplier("Stump", "assets/img/stump.svg", 10, 0, 300, MultiplierType.onTap),
+    Multiplier("Mushroom", "assets/img/mushroom.svg", 25, 0, 1000, MultiplierType.onTap),
+    Multiplier("Bark", "assets/img/bark.svg", 50, 0, 3000, MultiplierType.onTap),
+    Multiplier("Roots", "assets/img/root.svg", 100, 0, 8000, MultiplierType.onTap),
     // Per Second Multipliers
-    Multiplier("Birds", "assets/img/bird.svg", 5, 0, 200, MultiplierType.perSecond),
-    Multiplier("River", "assets/img/river.svg", 10, 0, 700, MultiplierType.perSecond),
-    Multiplier("Squirrels", "assets/img/squirrel.svg", 25, 0, 2500, MultiplierType.perSecond),
-    Multiplier("Sun", "assets/img/sun.svg", 1, 0, 5, MultiplierType.perSecond),
-    Multiplier("Watering Pot", "assets/img/wateringpot.svg", 2, 0, 9, MultiplierType.perSecond),
-    Multiplier("Shovel", "assets/img/shovel.svg", 3, 0, 13, MultiplierType.perSecond),
+    Multiplier("Birds", "assets/img/bird.svg", 1, 0, 500, MultiplierType.perSecond),
+    Multiplier("River", "assets/img/river.svg", 5, 0, 10000, MultiplierType.perSecond),
+    Multiplier("Squirrels", "assets/img/squirrel.svg", 10, 0, 30000, MultiplierType.perSecond),
+    Multiplier("Sun", "assets/img/sun.svg", 25, 0, 100000, MultiplierType.perSecond),
+    Multiplier("Watering Pot", "assets/img/wateringpot.svg", 50, 0, 300000, MultiplierType.perSecond),
+    Multiplier("Shovel", "assets/img/shovel.svg", 100, 0, 800000, MultiplierType.perSecond),
   ];
 
   @override
@@ -249,7 +250,7 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
               valueColor:
                   new AlwaysStoppedAnimation<Color>(Color((0xffffc107))),
               backgroundColor: Color(0xff1b0000),
-              value: (trees.toDouble() * adFactor + 1) /
+              value: (treeTotal.toDouble() * adFactor + 1) /
                   (treesGoal.toDouble() + 1),
               semanticsLabel: "trees progress indicator"),
         ),
@@ -296,8 +297,7 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
                             incrementScoreManual();
                           },
                           child: Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, 0),
+                            padding: const EdgeInsets.fromLTRB(32.0, 32.0, 32.0, 0),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 500),
                               child: treeImage,
@@ -322,18 +322,17 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
                               backgroundColor: MaterialStateProperty.all<Color>(
                                   Color(0xffffc107)),
                               shape: MaterialStateProperty.all<
-                                      RoundedRectangleBorder>(
+                                  RoundedRectangleBorder>(
                                   RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(25.0),
-                                      side: BorderSide(
-                                          color: Color(0xff003300))))),
+                                      side: BorderSide(color: Color(0xff003300))))),
                         ),
                         ElevatedButton(
                           onPressed: () => Share.share(
                               'Check out Tree Tapper!\n' +
                                   'I planted ' +
                                   (trees * adFactor).toString() +
-                                  " real trees playing the game!\n" +
+                                  " real trees playing this!\n" +
                                   "Download it at https://tree-tapper.com",
                               subject: 'Check out Tree Tapper!'),
                           child: Icon(Icons.share),
@@ -352,7 +351,7 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
                         Visibility(
                             visible: prestigeVisible,
                             child: ElevatedButton(
-                                onPressed: () => upgradeBackground(),
+                                onPressed: () => tapPrestige(),
                                 child: Icon(Icons.plus_one),
                                 style: ButtonStyle(
                                     foregroundColor:
@@ -466,97 +465,98 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
                 padding: const EdgeInsets.all(5),
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                crossAxisCount: 3,
+                crossAxisCount: 2,
+                childAspectRatio: 5 / 3,
                 children: List.generate(multipliers.length, (index) {
                   return Center(
-                    child: GestureDetector(
+                    child: Card(
+                        child: InkWell(
                       onTap: () {
                         tapMultiplier(index);
                       },
-                      child: Container(
-                        color: Color(0xff003300),
-                        alignment: Alignment.center,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: SvgPicture.asset(
-                                      multipliers[index].image,
-                                      semanticsLabel: multipliers[index].name,
-                                      color: Colors.white,
-                                      height: 35,
-                                      width: 35,
-                                      alignment: Alignment.topLeft,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(2.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: SvgPicture.asset(
+                                multipliers[index].image,
+                                semanticsLabel: multipliers[index].name,
+                                color: Color(0xff558b2f),
+                                height: 35,
+                                width: 35,
+                                alignment: Alignment.center,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 0, 4, 0),
                                     child: Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Text(
-                                          "x ",
-                                          textAlign: TextAlign.center,
+                                      alignment: Alignment.centerLeft,
+                                      child: AutoSizeText(
+                                          "Count: x" +
+                                              multipliers[index]
+                                                  .count
+                                                  .toString(),
                                           style: GoogleFonts.vt323(
                                               textStyle: TextStyle(
-                                                  color: Colors.white)),
-                                        )),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: AutoSizeText(
-                                            multipliers[index].count.toString(),
-                                            maxLines: 1,
-                                            style: GoogleFonts.pressStart2p(
-                                                textStyle: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 20)),
-                                          )),
+                                                  color: Colors.black,
+                                                  fontSize: 20))),
                                     ),
                                   ),
-                                ],
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Align(
-                                  alignment: Alignment.bottomLeft,
-                                  child: Text(
-                                      "Price: -" +
-                                          multipliers[index].cost.toString() +
-                                          "kg",
-                                      style: GoogleFonts.vt323(
-                                          textStyle:
-                                              TextStyle(color: Colors.white))),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Align(
-                                  alignment: Alignment.bottomLeft,
-                                  child: Text(
-                                      "Effect: +" +
-                                          multipliers[index]
-                                              .multiplicationFactor
-                                              .toString() +
-                                          Multiplier.getStringForType(
-                                              multipliers[index].type),
-                                      style: GoogleFonts.vt323(
-                                          textStyle:
-                                              TextStyle(color: Colors.white))),
+                                Expanded(
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 0, 4, 0),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: AutoSizeText(
+                                          "Price: -" +
+                                              multipliers[index]
+                                                  .cost
+                                                  .toString() +
+                                              "kg",
+                                          style: GoogleFonts.vt323(
+                                              textStyle: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 20))),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                Expanded(
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 0, 4, 0),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: AutoSizeText(
+                                          "Effect: +" +
+                                              multipliers[index]
+                                                  .multiplicationFactor
+                                                  .toString() +
+                                              Multiplier.getStringForType(
+                                                  multipliers[index].type),
+                                          style: GoogleFonts.vt323(
+                                              textStyle: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 20))),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          )
+                        ],
                       ),
-                    ),
+                    )),
                   );
                 })))
       ]),
@@ -681,14 +681,11 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
       setState(() {
         //if (treeAsset > totalTreeAssets) {
         if (treeAsset > totalTreeAssets) {
-          print('Triggering prestige visibility because asset ' +
-              treeAsset.toString() +
-              " has been hit. Should remain visible.");
           treeAsset = 0;
           prestigeVisible = true;
         }
         // TODO: This is the multiplication factor for scoreGoal. Balance it
-        scoreGoal = scoreGoal * BigInt.from(3);
+        scoreGoal = scoreGoal * BigInt.from(2);
         treeImage = Image.asset(
             "assets/img/tree-" + treeAsset.toString() + ".png",
             key: ValueKey<int>(treeAsset));
@@ -696,29 +693,60 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
     }
   }
 
+  void tapPrestige() {
+    showDialog(
+        context: context,
+        builder: (_) => new AlertDialog(
+              title: new Text("Are you sure?"),
+              content: new Text(
+                  "This will upgrade you to the next level, resetting your current progress."),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Yes!'),
+                  onPressed: () {
+                    upgradeBackground();
+                    Navigator.of(context).pop();
+                  },
+                )
+              ],
+            ));
+  }
+
   // This gets called when the prestige button is pressed. Changes the background and resets progress.
   void upgradeBackground() {
-    // Reset everything to 0
-    score = BigInt.from(0);
-    scoreGoal = BigInt.from(initialScoreGoal);
-    multipliers.forEach((multiplier) {
-      multiplier.count = 0;
-    });
-    onTapVal = 0;
-    perSecVal = 0;
-    backgroundAsset++;
-    if (backgroundAsset > 4) backgroundAsset = 0;
-    treeAsset = 0;
-    saveData();
+    if (backgroundAsset < totalBackgroundAssets) {
+      // Reset everything to 0
+      score = BigInt.from(0);
+      scoreGoal = BigInt.from(initialScoreGoal);
+      multipliers.forEach((multiplier) {
+        multiplier.count = 0;
+        multiplier.cost = multiplier.baseCost;
+      });
+      onTapVal = 1;
+      perSecVal = 0;
+      backgroundAsset++;
+      treeAsset = 0;
+      saveData();
 
-    // Change background asset
-    setState(() {
-      backgroundImage = Image.asset(
-        "assets/img/background-" + backgroundAsset.toString() + ".png",
-        fit: BoxFit.cover,
-      );
-      prestigeVisible = false;
-    });
+      // Change background asset
+      setState(() {
+        backgroundImage = Image.asset(
+          "assets/img/background-" + backgroundAsset.toString() + ".png",
+          fit: BoxFit.cover,
+        );
+        treeImage =
+            Image.asset("assets/img/tree-0.png", key: ValueKey<int>(treeAsset));
+        prestigeVisible = false;
+      });
+    } else {
+      showToast("You have reached the final stage... for now!");
+    }
   }
 
   void showToast(String t) {
@@ -738,7 +766,6 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
     var spScore = prefs.getString("score") ?? "0";
     score = BigInt.parse(spScore);
 
-    // TODO: This is the start value for scoreGoal. Balance it.
     var spScoreGoal =
         prefs.getString("scoreGoal") ?? initialScoreGoal.toString();
     scoreGoal = BigInt.parse(spScoreGoal);
@@ -747,6 +774,7 @@ class TapperHomePageState extends State<TapperHomepage> with TickerProviderState
     multipliers.forEach((multiplier) {
       multiplier.count = prefs.getInt(multiplier.name) ?? 0;
     });
+
     treeAsset = prefs.getInt("treeAssets") ?? 0;
     backgroundAsset = prefs.getInt("backgroundAsset") ?? 0;
 

@@ -7,6 +7,7 @@ class Multiplier {
   int multiplicationFactor;
   int count;
   int cost;
+  int baseCost;
   MultiplierType type;
 
   Multiplier(String name, String image, int multiplicationFactor, int count,
@@ -16,15 +17,16 @@ class Multiplier {
     this.multiplicationFactor = multiplicationFactor;
     this.count = count;
     this.cost = cost;
+    this.baseCost = cost;
     this.type = type;
   }
 
   static String getStringForType(MultiplierType type) {
     switch (type) {
       case MultiplierType.onTap:
-        return " on Tap";
+        return " on tap";
       case MultiplierType.perSecond:
-        return " / s";
+        return " per sec";
       default:
         return "";
     }
