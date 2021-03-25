@@ -123,6 +123,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_tindercard:
+    dependency: "direct main"
+    description:
+      name: flutter_tindercard
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.0"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -177,6 +184,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.3"
+  logging:
+    dependency: transitive
+    description:
+      name: logging
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  lottie:
+    dependency: "direct main"
+    description:
+      name: lottie
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.1"
   matcher:
     dependency: transitive
     description:
@@ -195,6 +216,48 @@ packages:
     dependency: transitive
     description:
       name: mime
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  package_info_plus:
+    dependency: "direct main"
+    description:
+      name: package_info_plus
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  package_info_plus_linux:
+    dependency: transitive
+    description:
+      name: package_info_plus_linux
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  package_info_plus_macos:
+    dependency: transitive
+    description:
+      name: package_info_plus_macos
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  package_info_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: package_info_plus_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  package_info_plus_web:
+    dependency: transitive
+    description:
+      name: package_info_plus_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
+  package_info_plus_windows:
+    dependency: transitive
+    description:
+      name: package_info_plus_windows
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
@@ -289,6 +352,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.1.0"
+  shadowed_image:
+    dependency: "direct main"
+    description:
+      name: shadowed_image
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.3"
   share:
     dependency: "direct main"
     description:
