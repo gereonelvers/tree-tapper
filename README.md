@@ -7,7 +7,7 @@ To run the game yourself, do the following in an environment where [Git](https:/
 ```
 git clone https://github.com/gereonelvers/tree-tapper.git
 ```
-Navigate into the project with an editor/IDE of your choice and change the AdMob App- as well as Ad-Unit-ID with your own. You can create an AdMob account [here](https://admob.google.com/). Remember to use the provided [placeholder ID](https://developers.google.com/admob/android/test-ads) when not deploying to real users. The values can be found in AndroidManifest.xml and GameScreen.dart respectively. Both have been marked with TODOs which are automatically highlighted in Android Studio. Afterwards, in order to run the project execute:
+Navigate into the project with an editor/IDE of your choice and change the AdMob App- as well as Ad-Unit-ID with your own (choose "Rewarded" as ad type). You can create an AdMob account [here](https://admob.google.com/). Remember to use the provided [placeholder ID](https://developers.google.com/admob/android/test-ads) when not deploying to real users. The values can be found in AndroidManifest.xml and GameScreen.dart respectively. Both have been marked with TODOs which are automatically highlighted in Android Studio. Afterwards, in order to run the project execute:
 
 ```
 flutter run
@@ -15,3 +15,4 @@ flutter run
 Alternatively you can also build project packages using any one of [Flutter's build modes](https://flutter.dev/docs/testing/build-modes). Remember that for Android release deployments, you'll want to sign with your own [keystore](https://flutter.dev/docs/deployment/android).
 
 Note that the AdMob integration (as well as other minor components) currently only work on Android devices. When running on other devices, an exception will be thrown in the console - this should not otherwise affect gameplay.
+The code for the web server providing the global values to the game can be found [here](https://github.com/gereonelvers/tree-tapper-server).
