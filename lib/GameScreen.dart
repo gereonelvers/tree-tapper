@@ -43,7 +43,7 @@ class TapperHomePageState extends State<GameScreen> with TickerProviderStateMixi
   // These variables keep track of the user's score
   BigInt score = BigInt.from(0);
   BigInt scoreGoal = BigInt.from(1);
-  // TODO: This is the start value for scoreGoal. Balance it.
+
   int initialScoreGoal = 200;
 
   // These are the base values earned per tap/second
@@ -65,7 +65,6 @@ class TapperHomePageState extends State<GameScreen> with TickerProviderStateMixi
   bool rewardVisible = false;
 
   // Syntax for new Multipliers: name (must be unique!), image (svg), multiplicationFactor, count, cost, type
-  // TODO: Balance pricing
   List<Multiplier> multipliers = [
     // On Tap Multipliers
     Multiplier("Leaves", "assets/img/leaf.svg", 1, 0, 5, MultiplierType.onTap),
@@ -87,6 +86,7 @@ class TapperHomePageState extends State<GameScreen> with TickerProviderStateMixi
   void initState() {
     // Initialize the rewarded video ad
     rewardedAd = RewardedAd(
+      // TODO: Set own ID
       adUnitId: 'ca-app-pub-xxx',
       request: AdRequest(),
       listener: AdListener(
@@ -653,7 +653,6 @@ class TapperHomePageState extends State<GameScreen> with TickerProviderStateMixi
           treeAsset = 0;
           prestigeVisible = true;
         }
-        // TODO: This is the multiplication factor for scoreGoal. Balance it
         scoreGoal = scoreGoal * BigInt.from(2);
         treeImage = Image.asset(
             "assets/img/tree-" + treeAsset.toString() + ".png",
