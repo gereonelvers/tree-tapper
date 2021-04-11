@@ -61,7 +61,7 @@ class _InfoScreenState extends State<InfoScreen> with TickerProviderStateMixin {
         child: Align(
           alignment: Alignment.topLeft,
           child: Text(
-              "Upgrade your taps or add other bonuses by purchasing upgrades through the buttons below. You can also speed up your progress by watching an ad through the gold button on the top right. But there's a twist...",
+              "Upgrade your taps or add other bonuses by purchasing upgrades through the buttons below. Hint: Hold an upgrade to purchase more as many as you can afford!\nYou can also speed up your progress by watching an ad through the gold button on the top right. But there's a twist...",
               style: GoogleFonts.vt323(
                   textStyle: TextStyle(color: Colors.black, fontSize: 20))),
         )),
