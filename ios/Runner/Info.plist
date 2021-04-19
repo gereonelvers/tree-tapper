@@ -43,9 +43,9 @@
 		<false/>
 		<key>UIStatusBarHidden</key>
 		<false/>
-		<key>GADApplicationIdentifier</key>
 		<key>App ID comment</key>
 		<string>TODO: Set own ID</string>
+		<key>GADApplicationIdentifier</key>
         <string>ca-app-pub-xxx</string>
         <key>SKAdNetworkItems</key>
           <array>
