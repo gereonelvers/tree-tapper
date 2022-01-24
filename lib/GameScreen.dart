@@ -565,9 +565,8 @@ class TapperHomePageState extends State<GameScreen> with TickerProviderStateMixi
             content: SingleChildScrollView(
               child: ListBody(
                 children: <Widget>[
-                  Text('After tapping \'Consent\' below, you\'ll be able to earn in-game rewards and plant real trees using this button.'),
-                  Text(
-                      'By doing that, you consent to both our Legal Notice as well as Google\'s Terms of Service (since they supply the ads). Tap the buttons below to learn more.'),
+                  Text('After tapping \'Consent\' below, you\'ll be able double your CO2 earnings for 60 seconds by watching a rewarded video ad using this button. The payout received will then be used to plant real trees.'),
+                  Text('By doing that, you consent to both our Legal Notice as well as Google\'s Terms of Service (since they supply the ads). Tap the buttons below to learn more.'),
                   SizedBox(
                     height: 15,
                   ),
@@ -615,7 +614,7 @@ class TapperHomePageState extends State<GameScreen> with TickerProviderStateMixi
     rewardFactor = 2;
     calcCo2Values();
     incrementTrees();
-    showToast("Congrats! You helped plant a tree. Enjoy double points for one minute!");
+    showToast("Congrats! You helped plant trees. Enjoy double points for one minute!");
   }
 
   // This gets called on loop (1/s)
